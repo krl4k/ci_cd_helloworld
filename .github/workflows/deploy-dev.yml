@@ -44,29 +44,26 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-          # Create kubeconfig with proper permissions
-          mkdir -p ~/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
-          chmod 600 ~/.kube/config
-
-          # Deploy using kubectl and helm
           docker run --rm \
-            -v ~/.kube:/root/.kube \
             -v $(pwd):/workspace \
             -w /workspace \
-            -e KUBECONFIG=/root/.kube/config \
-            bitnami/kubectl:latest \
-            kubectl create namespace dev --dry-run=client -o yaml | kubectl apply -f -
-
-          docker run --rm \
-            -v ~/.kube:/root/.kube \
-            -v $(pwd):/workspace \
-            -w /workspace \
-            -e KUBECONFIG=/root/.kube/config \
-            alpine/helm:3.12.0 \
-            upgrade --install hello-service ./helm/hello-service \
-              --namespace dev \
-              --values ./helm/hello-service/values.dev.yaml \
-              --set image.repository=ghcr.io/${{ github.repository }}/hello-service \
-              --set image.tag=${{ github.ref_name }} \
-              --wait
+            -e KUBE_CONFIG="${{ secrets.KUBE_CONFIG }}" \
+            --entrypoint /bin/sh \
+            ghcr.io/rancher/k3d:v5.6.0 \
+            -c '
+              # Write kubeconfig from secret
+              echo "$KUBE_CONFIG" > kubeconfig.yaml
+              chmod 600 kubeconfig.yaml
+              export KUBECONFIG=$(pwd)/kubeconfig.yaml
+              
+              # Create namespace if it doesnt exist
+              kubectl create namespace dev --dry-run=client -o yaml | kubectl apply -f -
+              
+              # Deploy/upgrade with Helm
+              helm upgrade --install hello-service ./helm/hello-service \
+                --namespace dev \
+                --values ./helm/hello-service/values.dev.yaml \
+                --set image.repository=ghcr.io/${{ github.repository }}/hello-service \
+                --set image.tag=${{ github.ref_name }} \
+                --wait
+            '
