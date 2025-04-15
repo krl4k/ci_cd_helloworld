@@ -69,6 +69,14 @@ jobs:
           
           # Create namespace if it doesnt exist
           kubectl create namespace dev --dry-run=client -o yaml | kubectl apply -f -
+
+          # Create registry secret if it doesn't exist
+          kubectl create secret docker-registry ghcr-credentials \
+            --docker-server=ghcr.io \
+            --docker-username=${{ github.actor }} \
+            --docker-password=${{ secrets.CR_PAT }} \
+            --namespace=dev \
+            --dry-run=client -o yaml | kubectl apply -f -
           
           # Deploy/upgrade with Helm
           helm upgrade --install hello-service ./helm/hello-service \
@@ -76,4 +84,5 @@ jobs:
             --values ./helm/hello-service/values.dev.yaml \
             --set image.repository=ghcr.io/${{ github.repository }}/hello-service \
             --set image.tag=${{ steps.tag.outputs.IMAGE_TAG }} \
+            --set imagePullSecrets[0].name=ghcr-credentials \
             --wait
