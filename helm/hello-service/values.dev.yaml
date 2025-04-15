@@ -5,6 +5,9 @@ image:
   tag: latest
   pullPolicy: Always
 
+imagePullSecrets:
+  - name: ghcr-credentials
+
 service:
   type: ClusterIP
   port: 80
