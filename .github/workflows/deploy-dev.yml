@@ -13,6 +13,7 @@ jobs:
     container:
       image: dtzar/helm-kubectl:latest
     
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,7 +22,17 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: '1.21'
-          cache: true
+
+      # Install Docker in the container
+      - name: Install Docker
+        run: |
+          # Install Docker CLI in the Alpine-based container
+          apk add --no-cache docker
+          # Make sure Docker is available
+          which docker || echo "Docker not found in PATH"
+          # Add docker to PATH if necessary
+          export PATH=$PATH:/usr/bin
+          echo "PATH=$PATH" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -33,25 +44,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.CR_PAT }}
 
-      - name: Determine image tag
+      - name: Determine tag name
         id: tag
         run: |
-          # Set default tag for main branch
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             echo "IMAGE_TAG=latest" >> $GITHUB_OUTPUT
           else
-            # Use tag name for tag events
             echo "IMAGE_TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           fi
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./services/hello-service/src
-          push: true
-          tags: ghcr.io/${{ github.repository }}/hello-service:${{ steps.tag.outputs.IMAGE_TAG }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+        run: |
+          cd ./services/hello-service/src
+          docker build -t ghcr.io/${{ github.repository }}/hello-service:${{ steps.tag.outputs.IMAGE_TAG }} .
+          docker push ghcr.io/${{ github.repository }}/hello-service:${{ steps.tag.outputs.IMAGE_TAG }}
 
       - name: Deploy to Kubernetes
         run: |
@@ -60,7 +66,7 @@ jobs:
           chmod 600 kubeconfig.yaml
           export KUBECONFIG=$(pwd)/kubeconfig.yaml
           
-          # Create namespace if it doesn't exist
+          # Create namespace if it doesnt exist
           kubectl create namespace dev --dry-run=client -o yaml | kubectl apply -f -
           
           # Deploy/upgrade with Helm
@@ -69,10 +75,4 @@ jobs:
             --values ./helm/hello-service/values.dev.yaml \
             --set image.repository=ghcr.io/${{ github.repository }}/hello-service \
             --set image.tag=${{ steps.tag.outputs.IMAGE_TAG }} \
-            --wait --timeout 5m
-            
-      - name: Verify deployment
-        run: |
-          kubectl get deployment -n dev hello-service -o wide
-          kubectl get pods -n dev -l app=hello-service -o wide
-          echo "Deployment completed successfully!"
+            --wait
