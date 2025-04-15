@@ -48,13 +48,14 @@ jobs:
             -v $(pwd):/workspace \
             -w /workspace \
             -e KUBE_CONFIG="${{ secrets.KUBE_CONFIG }}" \
+            --entrypoint /bin/sh \
             alpine/helm:3.12.0 \
-            sh -c '
+            -c '
               # Write kubeconfig from secret
               echo "$KUBE_CONFIG" | base64 -d > kubeconfig.yaml
               export KUBECONFIG=$(pwd)/kubeconfig.yaml
               
-              # Create namespace if it doesn\'t exist
+              # Create namespace if it doesnt exist
               kubectl create namespace dev --dry-run=client -o yaml | kubectl apply -f -
               
               # Deploy/upgrade with Helm
