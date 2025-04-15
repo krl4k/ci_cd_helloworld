@@ -13,7 +13,6 @@ jobs:
     container:
       image: dtzar/helm-kubectl:latest
     
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -61,10 +60,12 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
+          # Create kubeconfig directory
+          mkdir -p $HOME/.kube
+          
           # Write kubeconfig from secret
-          echo "${{ secrets.KUBE_CONFIG }}" > kubeconfig.yaml
-          chmod 600 kubeconfig.yaml
-          export KUBECONFIG=$(pwd)/kubeconfig.yaml
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
           
           # Create namespace if it doesnt exist
           kubectl create namespace dev --dry-run=client -o yaml | kubectl apply -f -
