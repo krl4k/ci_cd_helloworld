@@ -90,7 +90,7 @@ jobs:
           helm upgrade --install hello-service ./helm/hello-service \
             --namespace dev \
             --values ./helm/hello-service/values.dev.yaml \
-            --set image.repository=ghcr.io/krl4k/hello-service \
+            --set image.repository=ghcr.io/krl4k/ci_cd_helloworld/hello-service \
             --set image.tag=${{ steps.tag.outputs.IMAGE_TAG }} \
             --set imagePullSecrets[0].name=ghcr-credentials \
             --wait \
