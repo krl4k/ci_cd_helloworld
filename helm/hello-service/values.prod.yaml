@@ -1,0 +1,33 @@
+replicaCount: 3
+
+image:
+  repository: krl4kk/hello-service
+  tag: v1.0.0  # Using specific version in prod
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+
+ingress:
+  enabled: true
+  className: "traefik"
+  hosts:
+    - host: hello.yourdomain.com
+      paths:
+        - path: /
+          pathType: Prefix
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 200m
+    memory: 256Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80 

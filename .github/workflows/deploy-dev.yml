@@ -1,0 +1,65 @@
+name: Deploy to Dev
+
+on:
+  push:
+    tags:
+      - 'v*'  # This will trigger on tags like v1.2.3
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        env:
+          IMAGE_TAG: ${{ github.ref_name }}  # This will be the tag name (e.g., v1.2.3)
+        run: |
+          docker build -t ghcr.io/${{ github.repository }}/hello-service:$IMAGE_TAG ./services/hello-service/src
+          docker push ghcr.io/${{ github.repository }}/hello-service:$IMAGE_TAG
+
+      - name: Install kubectl and helm
+        uses: azure/setup-helm@v3
+        with:
+          version: '3.12.0'
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Deploy with Helm
+        run: |
+          # Create namespace if it doesn't exist
+          kubectl create namespace dev --dry-run=client -o yaml | kubectl apply -f -
+          
+          # Deploy using Helm with values.dev.yaml
+          helm upgrade --install hello-service ./helm/hello-service \
+            --namespace dev \
+            --values ./helm/hello-service/values.dev.yaml \
+            --set image.repository=ghcr.io/${{ github.repository }}/hello-service \
+            --set image.tag=$IMAGE_TAG \
+            --wait

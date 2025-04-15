@@ -1,0 +1,28 @@
+replicaCount: 1
+
+image:
+  repository: krl4kk/hello-service
+  tag: latest
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+
+ingress:
+  enabled: true
+  className: "traefik"
+  hosts:
+    - host: hello-dev.yourdomain.com
+      paths:
+        - path: /
+          pathType: Prefix
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi 
