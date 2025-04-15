@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: krl4kk/hello-service
+  repository: ghcr.io/krl4k/hello-service
   tag: latest
   pullPolicy: Always
 
@@ -25,4 +25,11 @@ resources:
     memory: 128Mi
   requests:
     cpu: 50m
-    memory: 64Mi 
+    memory: 64Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 2
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80 
