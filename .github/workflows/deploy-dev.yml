@@ -25,10 +25,6 @@ jobs:
         with:
           go-version: '1.21'
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get install -y unzip curl
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -46,26 +42,25 @@ jobs:
           docker build -t ghcr.io/${{ github.repository }}/hello-service:$IMAGE_TAG ./services/hello-service/src
           docker push ghcr.io/${{ github.repository }}/hello-service:$IMAGE_TAG
 
-      - name: Install kubectl and helm
-        uses: azure/setup-helm@v3
+      - name: Deploy to Kubernetes
+        uses: docker://alpine/helm:3.12.0
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
         with:
-          version: '3.12.0'
-
-      - name: Configure kubeconfig
-        run: |
-          mkdir -p ~/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
-          chmod 600 ~/.kube/config
-
-      - name: Deploy with Helm
-        run: |
-          # Create namespace if it doesn't exist
-          kubectl create namespace dev --dry-run=client -o yaml | kubectl apply -f -
-          
-          # Deploy using Helm with values.dev.yaml
-          helm upgrade --install hello-service ./helm/hello-service \
-            --namespace dev \
-            --values ./helm/hello-service/values.dev.yaml \
-            --set image.repository=ghcr.io/${{ github.repository }}/hello-service \
-            --set image.tag=$IMAGE_TAG \
-            --wait
+          entrypoint: /bin/sh
+          args: |
+            -c |
+            # Write kubeconfig from secret
+            echo "$KUBE_CONFIG" | base64 -d > kubeconfig.yaml
+            export KUBECONFIG=$(pwd)/kubeconfig.yaml
+            
+            # Create namespace if it doesn't exist
+            kubectl create namespace dev --dry-run=client -o yaml | kubectl apply -f -
+            
+            # Deploy/upgrade with Helm
+            helm upgrade --install hello-service ./helm/hello-service \
+              --namespace dev \
+              --values ./helm/hello-service/values.dev.yaml \
+              --set image.repository=ghcr.io/${{ github.repository }}/hello-service \
+              --set image.tag=${{ github.ref_name }} \
+              --wait
