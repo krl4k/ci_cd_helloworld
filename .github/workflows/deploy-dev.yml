@@ -43,24 +43,25 @@ jobs:
           docker push ghcr.io/${{ github.repository }}/hello-service:$IMAGE_TAG
 
       - name: Deploy to Kubernetes
-        uses: docker://alpine/helm:3.12.0
-        env:
-          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
-        with:
-          entrypoint: /bin/sh
-          args: |
-            -c |
-            # Write kubeconfig from secret
-            echo "$KUBE_CONFIG" | base64 -d > kubeconfig.yaml
-            export KUBECONFIG=$(pwd)/kubeconfig.yaml
-            
-            # Create namespace if it doesn't exist
-            kubectl create namespace dev --dry-run=client -o yaml | kubectl apply -f -
-            
-            # Deploy/upgrade with Helm
-            helm upgrade --install hello-service ./helm/hello-service \
-              --namespace dev \
-              --values ./helm/hello-service/values.dev.yaml \
-              --set image.repository=ghcr.io/${{ github.repository }}/hello-service \
-              --set image.tag=${{ github.ref_name }} \
-              --wait
+        run: |
+          docker run --rm \
+            -v $(pwd):/workspace \
+            -w /workspace \
+            -e KUBE_CONFIG="${{ secrets.KUBE_CONFIG }}" \
+            alpine/helm:3.12.0 \
+            sh -c '
+              # Write kubeconfig from secret
+              echo "$KUBE_CONFIG" | base64 -d > kubeconfig.yaml
+              export KUBECONFIG=$(pwd)/kubeconfig.yaml
+              
+              # Create namespace if it doesn\'t exist
+              kubectl create namespace dev --dry-run=client -o yaml | kubectl apply -f -
+              
+              # Deploy/upgrade with Helm
+              helm upgrade --install hello-service ./helm/hello-service \
+                --namespace dev \
+                --values ./helm/hello-service/values.dev.yaml \
+                --set image.repository=ghcr.io/${{ github.repository }}/hello-service \
+                --set image.tag=${{ github.ref_name }} \
+                --wait
+            '
