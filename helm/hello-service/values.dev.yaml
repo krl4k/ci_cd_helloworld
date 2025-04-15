@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/krl4k/hello-service
+  repository: ghcr.io/krl4k/ci_cd_helloworld/hello-service
   tag: latest
   pullPolicy: Always
 
