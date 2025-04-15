@@ -2,6 +2,8 @@ name: Deploy to Dev
 
 on:
   push:
+    branches:
+      - 'main'  # This will trigger on tags like v1.2.3
     tags:
       - 'v*'  # This will trigger on tags like v1.2.3
 
@@ -31,7 +33,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.CR_PAT`` }}
 
       - name: Build and push Docker image
         env:
