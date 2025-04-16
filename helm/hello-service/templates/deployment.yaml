@@ -25,6 +25,9 @@ spec:
           env:
             - name: APP_VERSION
               value: {{ .Values.image.tag | default .Chart.AppVersion }}
+            {{- if .Values.env }}
+            {{- toYaml .Values.env | nindent 12 }}
+            {{- end }}
           ports:
             - name: http
               containerPort: 3000
