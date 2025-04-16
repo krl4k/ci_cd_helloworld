@@ -2,28 +2,26 @@ name: Deploy to Dev
 
 on:
   push:
-    branches:
-      - 'main'
     tags:
       - 'v*'  # This will trigger on tags like v1.2.3
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 3  # Job level timeout
+    timeout-minutes: 5  # Job level timeout
     container:
       image: dtzar/helm-kubectl:latest
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        timeout-minutes: 3
+        timeout-minutes: 1
 
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: '1.21'
-        timeout-minutes: 3
+        timeout-minutes: 1
 
       # Install Docker in the container
       - name: Install Docker
@@ -35,11 +33,11 @@ jobs:
           # Add docker to PATH if necessary
           export PATH=$PATH:/usr/bin
           echo "PATH=$PATH" >> $GITHUB_ENV
-        timeout-minutes: 3
+        timeout-minutes: 1
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        timeout-minutes: 3
+        timeout-minutes: 1
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -47,7 +45,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.CR_PAT }}
-        timeout-minutes: 3
+        timeout-minutes: 1
 
       - name: Determine tag name
         id: tag
@@ -57,14 +55,14 @@ jobs:
           else
             echo "IMAGE_TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           fi
-        timeout-minutes: 3
+        timeout-minutes: 1
 
       - name: Build and push Docker image
         run: |
           cd ./services/hello-service/src
           docker build -t ghcr.io/${{ github.repository }}/hello-service:${{ steps.tag.outputs.IMAGE_TAG }} .
           docker push ghcr.io/${{ github.repository }}/hello-service:${{ steps.tag.outputs.IMAGE_TAG }}
-        timeout-minutes: 3
+        timeout-minutes: 1
 
       - name: Deploy to Kubernetes
         run: |
@@ -90,7 +88,7 @@ jobs:
           helm upgrade --install hello-service ./helm/hello-service \
             --namespace dev \
             --values ./helm/hello-service/values.dev.yaml \
-            --set image.repository=ghcr.io/krl4k/ci_cd_helloworld/hello-service \
+            --set image.repository=ghcr.io/${{ github.repository }}/hello-service \
             --set image.tag=${{ steps.tag.outputs.IMAGE_TAG }} \
             --set imagePullSecrets[0].name=ghcr-credentials \
             --wait \

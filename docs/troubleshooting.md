@@ -83,6 +83,43 @@
    kubectl get endpoints <service-name>
    ```
 
+### 5. Helm Issues
+
+**Symptoms:**
+- Helm releases failing to install/upgrade
+- Resources not being created properly
+- Helm release stuck in failed state
+
+**Solutions:**
+1. Delete a problematic release:
+   ```bash
+   helm uninstall <release-name> -n <namespace> --no-hooks
+   ```
+2. Check release status:
+   ```bash
+   helm status <release-name>
+   ```
+3. View release history:
+   ```bash
+   helm history <release-name>
+   ```
+4. Rollback to previous version:
+   ```bash
+   helm rollback <release-name> <revision-number>
+   ```
+5. Check for failed releases:
+   ```bash
+   helm list --failed
+   ```
+6. Force delete a stuck release:
+   ```bash
+   helm uninstall <release-name> --no-hooks
+   ```
+7. Check Helm chart values:
+   ```bash
+   helm get values <release-name>
+   ```
+
 ## Useful Commands
 
 ```bash

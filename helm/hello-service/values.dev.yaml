@@ -17,10 +17,12 @@ ingress:
   enabled: true
   className: "traefik"
   hosts:
-    - host: hello-dev.yourdomain.com
+    - host: 102.168.1.102
       paths:
-        - path: /
+        - path: /api/v1/
           pathType: Prefix
+          serviceName: hello-service
+          servicePort: 3000
 
 resources:
   limits:
