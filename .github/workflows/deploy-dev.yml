@@ -2,6 +2,8 @@ name: Deploy to Dev
 
 on:
   push:
+    branches:
+      - 'main'
     tags:
       - 'v*'  # This will trigger on tags like v1.2.3
 
