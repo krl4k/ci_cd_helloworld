@@ -17,7 +17,7 @@ ingress:
   enabled: true
   className: "traefik"
   hosts:
-    - host: 102.168.1.102
+    - host: hello-dev.krl4k.com
       paths:
         - path: /api/v1/
           pathType: Prefix
