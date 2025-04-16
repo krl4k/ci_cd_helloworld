@@ -33,12 +33,13 @@ func getPort() string {
 
 func initDB() {
 	var err error
-	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		os.Getenv("POSTGRES_HOST"),
 		os.Getenv("POSTGRES_PORT"),
 		os.Getenv("POSTGRES_USER"),
 		os.Getenv("POSTGRES_PASSWORD"),
 		os.Getenv("POSTGRES_DB"),
+		os.Getenv("POSTGRES_SSL_MODE"),
 	)
 
 	db, err = sql.Open("postgres", connStr)
@@ -47,9 +48,20 @@ func initDB() {
 	}
 
 	// Set connection pool settings
-	db.SetMaxOpenConns(25)
-	db.SetMaxIdleConns(25)
-	db.SetConnMaxLifetime(5 * time.Minute)
+	maxOpenConns := 10
+	maxIdleConns := 5
+	connMaxLifetime := 5 * time.Minute
+
+	if maxOpenConnsStr := os.Getenv("POSTGRES_MAX_OPEN_CONNS"); maxOpenConnsStr != "" {
+		fmt.Sscanf(maxOpenConnsStr, "%d", &maxOpenConns)
+	}
+	if maxIdleConnsStr := os.Getenv("POSTGRES_MAX_IDLE_CONNS"); maxIdleConnsStr != "" {
+		fmt.Sscanf(maxIdleConnsStr, "%d", &maxIdleConns)
+	}
+
+	db.SetMaxOpenConns(maxOpenConns)
+	db.SetMaxIdleConns(maxIdleConns)
+	db.SetConnMaxLifetime(connMaxLifetime)
 
 	// Test the connection
 	if err = db.Ping(); err != nil {
@@ -80,6 +92,17 @@ func helloHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Fprintf(w, "%s\n", message)
+	fmt.Println("Hello World from K3s!")
+}
+
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+	// Check database connection
+	if err := db.Ping(); err != nil {
+		http.Error(w, "Database connection failed", http.StatusServiceUnavailable)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "OK\n")
 }
 
 // just example of code, not prod version
@@ -91,6 +114,7 @@ func main() {
 	defer db.Close()
 
 	http.HandleFunc("/", helloHandler)
+	http.HandleFunc("/health", healthHandler)
 
 	port := getPort()
 	fmt.Printf("Server running at http://0.0.0.0%s/\n", port)

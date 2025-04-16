@@ -39,11 +39,21 @@ autoscaling:
   targetCPUUtilizationPercentage: 80
   targetMemoryUtilizationPercentage: 80
 
-# Development-specific PostgreSQL configuration
+# PostgreSQL configuration
 postgresql:
+  enabled: true
+  global:
+    postgresql:
+      auth:
+        postgresPassword: "postgres"
+        username: "postgres"
+        password: "postgres"
+        database: "hello_service"
   primary:
     persistence:
-      size: 1Gi  # Smaller size for development
+      enabled: true
+      size: 1Gi
+      storageClass: "local-path"
     resources:
       requests:
         memory: 128Mi
@@ -51,12 +61,32 @@ postgresql:
       limits:
         memory: 256Mi
         cpu: 200m
+    service:
+      type: ClusterIP
+      port: 5432
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9187"
 
-# Development-specific environment variables
+# Environment variables for the application
 env:
-  - name: DB_SSL_MODE
+  - name: PORT
+    value: "3000"
+  - name: POSTGRES_HOST
+    value: "hello-service-postgresql"
+  - name: POSTGRES_PORT
+    value: "5432"
+  - name: POSTGRES_DB
+    value: "hello_service"
+  - name: POSTGRES_USER
+    value: "postgres"
+  - name: POSTGRES_PASSWORD
+    value: "postgres"
+  - name: POSTGRES_SSL_MODE
     value: "disable"
-  - name: DB_MAX_CONNECTIONS
+  - name: POSTGRES_CONNECTION_TIMEOUT
+    value: "5"
+  - name: POSTGRES_MAX_IDLE_CONNS
+    value: "5"
+  - name: POSTGRES_MAX_OPEN_CONNS
     value: "10"
-  - name: DB_CONNECTION_TIMEOUT
-    value: "5" 

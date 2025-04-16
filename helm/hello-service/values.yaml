@@ -100,10 +100,10 @@ resources: {}
 
 # This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
 autoscaling:
-  enabled: false
-  minReplicas: 1
-  maxReplicas: 100
-  targetCPUUtilizationPercentage: 80
+  # enabled: false
+  # minReplicas: 1
+  # maxReplicas: 100
+  # targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
 
 # Additional volumes on the output Deployment definition.
@@ -124,44 +124,3 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
-
-# PostgreSQL configuration
-postgresql:
-  enabled: true
-  global:
-    postgresql:
-      auth:
-        postgresPassword: "postgres" # TODO: should be in secret
-        username: "postgres"
-        password: "postgres"
-        database: "hello_service"
-  primary:
-    persistence:
-      enabled: true
-      size: 4Gi
-    resources:
-      requests:
-        memory: 256Mi
-        cpu: 250m
-      limits:
-        memory: 512Mi
-        cpu: 500m
-  metrics:
-    enabled: true
-    serviceMonitor:
-      enabled: false
-
-# Application environment variables
-env:
-  - name: DB_HOST
-    value: "{{ .Release.Name }}-postgresql"
-  - name: DB_PORT
-    value: "5432"
-  - name: DB_NAME
-    value: "{{ .Values.postgresql.global.postgresql.auth.database }}"
-  - name: DB_USER
-    value: "{{ .Values.postgresql.global.postgresql.auth.username }}"
-  - name: DB_PASSWORD
-    value: "{{ .Values.postgresql.global.postgresql.auth.password }}"
-  - name: DB_SSL_MODE
-    value: "disable"  # Change to "require" in production
