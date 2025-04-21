@@ -75,21 +75,11 @@ postgresql:
 env:
   - name: PORT
     value: "3000"
-  - name: POSTGRES_HOST
-    value: "hello-service-postgresql"
-  - name: POSTGRES_PORT
-    value: "5432"
-  - name: POSTGRES_DB
-    value: "hello_service"
-  - name: POSTGRES_USER
-    value: "postgres"
-  - name: POSTGRES_PASSWORD
-    value: "postgres"
   - name: POSTGRES_SSL_MODE
     value: "disable"
   - name: POSTGRES_CONNECTION_TIMEOUT
-    value: "5"
+    value: "5s"
   - name: POSTGRES_MAX_IDLE_CONNS
-    value: "5"
-  - name: POSTGRES_MAX_OPEN_CONNS
     value: "10"
+  - name: POSTGRES_MAX_OPEN_CONNS
+    value: "100"
