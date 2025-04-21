@@ -45,6 +45,9 @@ postgresql:
   global:
     postgresql:
       auth:
+        # These values will be used to create the secret
+        # In production, you should use a more secure way to provide these values
+        # For example, using --set or a separate values file that's not committed
         postgresPassword: "postgres"
         username: "postgres"
         password: "postgres"
