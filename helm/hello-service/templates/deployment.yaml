@@ -30,20 +30,14 @@ spec:
             - name: POSTGRES_PORT
               value: "5432"
             - name: POSTGRES_DB
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "hello-service.fullname" . }}-postgresql
-                  key: postgresql-database
+              value: "hello_service"
             - name: POSTGRES_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "hello-service.fullname" . }}-postgresql
-                  key: postgresql-username
+              value: "postgres"
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ include "hello-service.fullname" . }}-postgresql
-                  key: postgresql-password
+                  key: postgres-password
             {{- if .Values.env }}
             {{- toYaml .Values.env | nindent 12 }}
             {{- end }}
